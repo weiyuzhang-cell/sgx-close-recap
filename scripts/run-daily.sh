@@ -5,7 +5,7 @@
 # 故障安全：任何一步失败或校验不过都不 push，保留线上上一版。全程写日志。
 
 set -uo pipefail
-export PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
 REPO="/Users/patrickwave/新加坡股市收盘skill/site"
 LOG="/Users/patrickwave/新加坡股市收盘skill/logs/sgx-close-recap.log"
