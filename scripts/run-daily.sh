@@ -41,9 +41,10 @@ LATEST="$(ls recaps/*.html 2>/dev/null | sort | grep -v "/${TODAY}.html$" | tail
 [ -z "$LATEST" ] && LATEST="$(ls recaps/*.html 2>/dev/null | sort | tail -1)"
 PROMPT="用 sgx-close-recap skill 生成今天(${TODAY}, SGT)的坡股收盘复盘。\
 **所有事实只从本仓库根目录的 ./data.json 读取**：index(STI 收盘/涨跌/高低)、uv_ranking(读者关注榜)、\
-basket(全成分涨跌)、selected_movers(已选定的个股，含 change_pct/direction 与 cli_valuation/cli_rating/cli_news)。\
+basket(全成分涨跌)、selected_movers(已选定的个股，含 change_pct/direction；cli_events=公司业务事件[主]、cli_valuation/cli_rating=估值评级[次])。\
 **严禁自己去查行情、算涨跌、定方向或另选个股**——个股就写 selected_movers 里这几只，涨跌方向与幅度用它给的值；\
-个股叙事从 cli_news/cli_valuation/cli_rating 里提炼（催化剂+估值/评级），The Tell 可参考 basket 的领涨领跌结构。\
+**个股段以事件为主线**：每只先讲 cli_events 里的具体业务事件/催化剂(订单/合约/评级调整/并购注资/获奖/财报，带事件里的数字)，写清发生了什么+为何与走势相关；\
+估值/目标价(cli_valuation/cli_rating)至多一句点缀，无合适事件时不硬凑财务数字，cli_events 为空则只据实写涨跌幅+板块、不编事件。The Tell 可参考 basket 的领涨领跌结构。\
 **读者关注 Top10 榜单**：若 data.json 的 top10_html 非空（当天 UV 已到位），在每个语言块的 The Tell 之后、免责声明之前，\
 把 top10_html 里对应语言（en/zh-CN/zh-TW）那段 **原样整段插入**（脚本已渲染好名次与 ↑，不得改动/重排/增删）；top10_html 为空则不插该段。\
 并把 data.json 的 uv_top10 原样并入末尾内嵌 JSON 顶层。\
