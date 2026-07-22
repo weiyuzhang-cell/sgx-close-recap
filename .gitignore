@@ -2,3 +2,7 @@
 state/
 .claude/
 node_modules/
+data.json
+scripts/fetch-data.py
+scripts/metabase-uv.py
+scripts/set-metabase-pw.py
