@@ -7,9 +7,9 @@
 set -uo pipefail
 export PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
-REPO="/Users/patrickwave/Desktop/新加坡股市收盘skill/site"
-LOG="/Users/patrickwave/Desktop/新加坡股市收盘skill/logs/sgx-close-recap.log"
-TOKEN_FILE="/Users/patrickwave/Desktop/新加坡股市收盘skill/config/token"
+REPO="/Users/patrickwave/新加坡股市收盘skill/site"
+LOG="/Users/patrickwave/新加坡股市收盘skill/logs/sgx-close-recap.log"
+TOKEN_FILE="/Users/patrickwave/新加坡股市收盘skill/config/token"
 TODAY="$(date +%Y-%m-%d)"
 OUT="recaps/${TODAY}.html"
 
