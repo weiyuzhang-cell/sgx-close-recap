@@ -6,3 +6,4 @@ data.json
 scripts/fetch-data.py
 scripts/metabase-uv.py
 scripts/set-metabase-pw.py
+leaderboard/

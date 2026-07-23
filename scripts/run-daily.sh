@@ -36,6 +36,10 @@ assert d.get("selected_movers"), "no movers"
 print("data ok")
 PY
 
+# 2.5) 生成三语「坡股今日人气榜」PNG → recaps/assets/（失败或无当日 UV 不影响正文）
+log "生成人气榜 PNG …"
+python3 leaderboard/build-leaderboard.py "$TODAY" >>"$LOG" 2>&1 || log "WARN: 人气榜出图失败，正文照常发"
+
 # 3) Claude 只照 data.json 写三语稿（不许自己找行情/定方向/选股）
 LATEST="$(ls recaps/*.html 2>/dev/null | sort | grep -v "/${TODAY}.html$" | tail -1)"
 [ -z "$LATEST" ] && LATEST="$(ls recaps/*.html 2>/dev/null | sort | tail -1)"
@@ -45,11 +49,9 @@ basket(全成分涨跌)、selected_movers(已选定的个股，含 change_pct/di
 **严禁自己去查行情、算涨跌、定方向或另选个股**——个股就写 selected_movers 里这几只，涨跌方向与幅度用它给的值；\
 **个股段以事件为主线**：每只先讲 cli_events 里的具体业务事件/催化剂(订单/合约/评级调整/并购注资/获奖/财报，带事件里的数字)，写清发生了什么+为何与走势相关；\
 估值/目标价(cli_valuation/cli_rating)至多一句点缀，无合适事件时不硬凑财务数字，cli_events 为空则只据实写涨跌幅+板块、不编事件。The Tell 可参考 basket 的领涨领跌结构。\
-**读者关注 Top10 榜单**：若 data.json 的 top10_html 非空（当天 UV 已到位），在每个语言块的 The Tell 之后、免责声明之前，\
-把 top10_html 里对应语言（en/zh-CN/zh-TW）那段 **原样整段插入**（脚本已渲染好名次与 ↑，不得改动/重排/增删）；top10_html 为空则不插该段。\
-并把 data.json 的 uv_top10 原样并入末尾内嵌 JSON 顶层。\
+**不要写「读者关注 Top10 / 人气榜」段，也不要在正文或内嵌 JSON 里放榜单数据或榜单图**——每日人气榜 PNG 由流水线在你写完后自动附到每个语言块末尾。若 ${LATEST} 模板里有 figure.recap-leaderboard 之类的旧榜单图，删掉别抄。\
 以 ${LATEST} 为精确结构模板，产出 ./${OUT}（完整 HTML；三个 <article class=recap> en/zh-CN/zh-TW；两个 h2.recap-subhead；\
-末尾 <script id=sgx-recap-data> 内嵌 JSON 换成今天内容、date=${TODAY}）。**不要调用 Artifact**。\
+末尾 <script id=sgx-recap-data> 内嵌 JSON 换成今天内容、date=${TODAY}，JSON 顶层不需要 uv_top10）。**不要调用 Artifact**。\
 若 ${OUT} 已存在直接覆盖、不要询问。确保内嵌 JSON 可 JSON.parse。按 skill 更新 running-threads。完成不必额外输出。"
 
 log "调用 claude 写稿（照 data.json）…"
@@ -64,6 +66,33 @@ d=json.loads(re.search(r'id="sgx-recap-data">(.*?)</script>',h,re.S).group(1))
 assert d['date']==today
 for k in ('en','zh-CN','zh-TW'): assert d['content'][k]['title'] and d['content'][k]['body']
 print("output ok")
+PY
+
+# 4.5) 确定性把人气榜图注入每语言 <article> 末尾（不依赖 claude；无图则自动跳过）
+python3 - "$REPO/$OUT" "$TODAY" <<'PY' 2>>"$LOG" || log "WARN: 榜单图注入失败，正文照常"
+import sys, os, re
+path, today = sys.argv[1], sys.argv[2]
+h = open(path, encoding="utf-8").read()
+assets = os.path.join(os.path.dirname(path), "assets")
+alt = {"en": "SGX Most Watched Today", "zh-CN": "坡股今日人气榜", "zh-TW": "坡股今日人氣榜"}
+n = 0
+for lang in ("en", "zh-CN", "zh-TW"):
+    png = f"{today}-{lang}.png"
+    if not os.path.exists(os.path.join(assets, png)):
+        continue
+    fig = (f'<figure class="recap-leaderboard" style="margin:36px 0 8px;text-align:center">'
+           f'<img src="assets/{png}" alt="{alt[lang]} · {today}" '
+           f'style="max-width:min(100%,460px);width:100%;height:auto;border-radius:14px;'
+           f'box-shadow:0 2px 16px rgba(0,0,0,.08)"></figure>')
+    pat = re.compile(r'(<article[^>]*data-lang="' + re.escape(lang) + r'".*?)(</article>)', re.S)
+    def repl(m):
+        body = re.sub(r'<figure class="recap-leaderboard".*?</figure>', '', m.group(1), flags=re.S)
+        return body + fig + m.group(2)
+    h2 = pat.sub(repl, h, count=1)
+    if h2 != h:
+        h = h2; n += 1
+open(path, "w", encoding="utf-8").write(h)
+print(f"leaderboard images injected: {n}")
 PY
 
 # 5) 重建存档首页
