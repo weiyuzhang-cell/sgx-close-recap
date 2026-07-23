@@ -80,17 +80,22 @@ for lang in ("en", "zh-CN", "zh-TW"):
     png = f"{today}-{lang}.png"
     if not os.path.exists(os.path.join(assets, png)):
         continue
-    fig = (f'<figure class="recap-leaderboard" style="margin:36px 0 8px;text-align:center">'
+    fig = (f'<figure class="recap-leaderboard" style="margin:32px 0;text-align:center">'
            f'<img src="assets/{png}" alt="{alt[lang]} · {today}" '
            f'style="max-width:min(100%,460px);width:100%;height:auto;border-radius:14px;'
            f'box-shadow:0 2px 16px rgba(0,0,0,.08)"></figure>')
-    pat = re.compile(r'(<article[^>]*data-lang="' + re.escape(lang) + r'".*?)(</article>)', re.S)
-    def repl(m):
-        body = re.sub(r'<figure class="recap-leaderboard".*?</figure>', '', m.group(1), flags=re.S)
-        return body + fig + m.group(2)
-    h2 = pat.sub(repl, h, count=1)
-    if h2 != h:
-        h = h2; n += 1
+    m = re.search(r'<article[^>]*data-lang="' + re.escape(lang) + r'".*?</article>', h, re.S)
+    if not m:
+        continue
+    art = re.sub(r'\s*<figure class="recap-leaderboard".*?</figure>', '', m.group(0), flags=re.S)  # 去旧图
+    subs = list(re.finditer(r'<h2[^>]*recap-subhead', art))
+    if len(subs) >= 2:                       # 插在第2个小标题(The Tell)前 = 个股焦点节之后
+        pos = subs[1].start()
+        art = art[:pos] + fig + art[pos:]
+    else:                                    # 兜底：文末
+        art = art.replace('</article>', fig + '</article>', 1)
+    h = h[:m.start()] + art + h[m.end():]
+    n += 1
 open(path, "w", encoding="utf-8").write(h)
 print(f"leaderboard images injected: {n}")
 PY
